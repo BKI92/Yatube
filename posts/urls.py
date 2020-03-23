@@ -20,5 +20,11 @@ from . import views
 urlpatterns = [
     path("new/", views.new_post, name="new"),
     path("group/<slug:slug>/", views.group_posts),
-    path("", views.index, name="index")
+    path("", views.index, name="index"),
+    # Профайл пользователя
+    path("user/<username>/", views.profile, name="profile"),
+    # Просмотр записи
+    path("<username>/<int:post_id>/", views.post_view, name="post"),
+    path("<username>/<int:post_id>/edit", views.post_edit, name="post_edit"),
+
 ]
