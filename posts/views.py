@@ -25,15 +25,13 @@ def group_posts(request, slug):
 
 @login_required
 def new_post(request):
+    form = PostForm(request.POST or None, files=request.FILES or None)
     if request.method == "POST":
-        form = PostForm(request.POST)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
             post.save()
             return redirect('index')
-    else:
-        form = PostForm()
     return render(request, 'new.html', {'form': form})
 
 
@@ -63,24 +61,21 @@ def post_view(request, username, post_id):
                   {'post': post, "author": author, 'total_posts': total_posts})
 
 
+@login_required
 def post_edit(request, username, post_id):
-    # тут тело функции. Не забудьте проверить,
-    # что текущий пользователь — это автор записи.
-    # В качестве шаблона страницы редактирования укажите шаблон создания новой записи
-    # который вы создали раньше (вы могли назвать шаблон иначе)
-    post = get_object_or_404(Post, id=post_id)
-    if post.author == request.user:
-        if request.method == 'POST':
-            form = PostForm(request.POST, instance=post)
-            if form.is_valid():
-                post = form.save(commit=False)
-                post.author = request.user
-                post.save()
-                return redirect('post', username, post_id)
+    profile = get_object_or_404(User, username=username)
+    post = get_object_or_404(Post, pk=post_id, author=profile)
+    if request.user != profile:
+        return redirect("post", username=request.user.username, post_id=post_id)
+    # добавим в form свойство files
+    form = PostForm(request.POST or None, files=request.FILES or None, instance=post)
 
-        else:
-            form = PostForm(instance=post)
-            return render(request, "new.html", {"form": form, "post": post})
-    else:
-        return redirect('post', username, post_id)
+    if request.method == "POST":
+        if form.is_valid():
+            form.save()
+            return redirect("post", username=request.user.username, post_id=post_id)
+
+    return render(
+        request, "new.html", {"form": form, "post": post},
+    )
 
