@@ -1,6 +1,8 @@
+from django.shortcuts import get_object_or_404
 from django.test import TestCase
 from django.test import Client
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 from posts.models import Post, Group
 
@@ -56,29 +58,17 @@ class PostTest(TestCase):
 
     def test_post_with_img(self):
         self.client.force_login(self.user)
-        post_with_img = Post.objects.create(text="Testing post.",
-                                            image='posts/test.jpg',
-                                            author=self.user)
         with open("media/posts/test.jpg", mode='rb') as image:
             self.client.post("/new/",
-                             {"text": post_with_img.text, 'image': image})
-        response = self.client.get(f"/{self.user.username}/{post_with_img.id}/")
+                             {"text": 'Testing post with image', 'image': image})
+        post_id = Post.objects.last().id
+        response = self.client.get(f"/{self.user.username}/{post_id}/")
         self.assertContains(response, 'img')
 
     def test_post_with_img_everywhere(self):
         self.client.force_login(self.user)
-        post_with_img = Post.objects.create(text="Testing post.",
-                                            image='posts/test.jpg',
-                                            author=self.user,
-                                            group=self.group
-                                            )
-        with open("media/posts/test.jpg", mode='rb') as image:
-            self.client.post("/new/",
-                             {"text": post_with_img.text,
-                              'image': image,
-                              'group': self.group
-                              }
-                             )
+        with open('media/posts/test.jpg', 'rb') as img:
+            self.client.post('/new/', {'text': 'new text', 'image': img, 'group': self.group.id})
         response_index = self.client.get(f"/")
         response_profile = self.client.get(f"/{self.user.username}/")
         response_group = self.client.get(f"/group/{self.group.slug}/")
@@ -89,7 +79,7 @@ class PostTest(TestCase):
     def test_post_with_non_graphic_files(self):
         self.client.force_login(self.user)
         with open('manage.py', 'rb') as file:
-            self.client.post('new', {'text': 'new text', 'image': file})
+            self.client.post('/new/', {'text': 'new text', 'image': file})
         post = Post.objects.last()
         with self.assertRaises(ValueError):
             post.image.open()
