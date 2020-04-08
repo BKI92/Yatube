@@ -18,8 +18,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("<username>/<int:post_id>/comment/", views.add_comment,
+         name="add_comment"),
     path("new/", views.new_post, name="new"),
-    path("group/<slug:slug>/", views.group_posts),
+    path("group/<slug:slug>/", views.group_posts, name='group'),
     # Профайл пользователя
     path("<username>/", views.profile, name="profile"),
     # Просмотр записи
