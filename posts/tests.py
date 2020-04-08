@@ -1,8 +1,10 @@
+import time
+
 from django.shortcuts import get_object_or_404
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.test import Client
 from django.contrib.auth import get_user_model
-from django.urls import reverse
+from yatube import settings
 
 from posts.models import Post, Group
 
@@ -46,6 +48,7 @@ class PostTest(TestCase):
         self.assertEqual(response.redirect_chain[0][0],
                          '/auth/login/?next=/new/')
 
+    @override_settings(CACHES=settings.TEST_CACHES)
     def test_edit_post_from_authorized_user(self):
         self.client.force_login(self.user)
         self.client.post("/new/", {
@@ -56,19 +59,23 @@ class PostTest(TestCase):
         response = self.client.get("/")
         self.assertContains(response, new_text)
 
+    @override_settings(CACHES=settings.TEST_CACHES)
     def test_post_with_img(self):
         self.client.force_login(self.user)
         with open("media/posts/test.jpg", mode='rb') as image:
             self.client.post("/new/",
-                             {"text": 'Testing post with image', 'image': image})
+                             {"text": 'Testing post with image',
+                              'image': image})
         post_id = Post.objects.last().id
         response = self.client.get(f"/{self.user.username}/{post_id}/")
         self.assertContains(response, 'img')
 
+    @override_settings(CACHES=settings.TEST_CACHES)
     def test_post_with_img_everywhere(self):
         self.client.force_login(self.user)
         with open('media/posts/test.jpg', 'rb') as img:
-            self.client.post('/new/', {'text': 'new text', 'image': img, 'group': self.group.id})
+            self.client.post('/new/', {'text': 'new text', 'image': img,
+                                       'group': self.group.id})
         response_index = self.client.get(f"/")
         response_profile = self.client.get(f"/{self.user.username}/")
         response_group = self.client.get(f"/group/{self.group.slug}/")
@@ -76,6 +83,7 @@ class PostTest(TestCase):
         self.assertContains(response_profile, 'img')
         self.assertContains(response_group, 'img')
 
+    @override_settings(CACHES=settings.TEST_CACHES)
     def test_post_with_non_graphic_files(self):
         self.client.force_login(self.user)
         with open('manage.py', 'rb') as file:
@@ -83,6 +91,16 @@ class PostTest(TestCase):
         post = Post.objects.last()
         with self.assertRaises(ValueError):
             post.image.open()
+
+    def test_check_cache(self):
+        self.client.force_login(self.user)
+        self.client.post('/new/', {'text': 'new text for testing cash',
+                                   'group': self.group.id})
+        response = self.client.get("/")
+        self.assertNotContains(response, 'new text for testing cash')
+        time.sleep(20)
+        response_2 = self.client.get("/")
+        self.assertContains(response_2, 'new text for testing cash')
 
     def tearDown(self):
         self.client.logout()
