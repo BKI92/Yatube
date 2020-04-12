@@ -1,10 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Profile</title>
-</head>
-<body>
+
 {% extends "base.html" %}
 {% block content %}
 {% load thumbnail %}
@@ -16,18 +10,18 @@
                             <div class="card-body">
                                     <div class="h2">
                                         <!-- Имя автора -->
-                                        {{author.first_name}} {{author.last_name}}
+                                        {{profile.first_name}} {{profile.last_name}}
                                     </div>
                                     <div class="h3 text-muted">
                                          <!-- username автора -->
-                                         {{author.username}}
+                                         {{profile.username}}
                                     </div>
                             </div>
                             <ul class="list-group list-group-flush">
                                     <li class="list-group-item">
                                             <div class="h6 text-muted">
-                                            Подписчиков: XXX <br />
-                                            Подписан: XXX
+                                            Подписчиков: {{followers}} <br />
+                                            Подписан: {{following}}
                                             </div>
                                     </li>
                                     <li class="list-group-item">
@@ -37,9 +31,32 @@
                                                 Записей: {{total_posts}}
                                             </div>
                                     </li>
+                            {% if request.user.username %}
+                                {% if profile != request.user %}
+                                <li class="list-group-item">
+                                    {% if follow_status.first %}
+                                        <a class="btn btn-lg btn-light"
+                                                href="{% url 'profile_unfollow' profile.username %}" role="button">
+                                                Отписаться
+                                        </a>
+                                    {% else %}
+                                        <a class="btn btn-lg btn-primary"
+                                                href="{% url 'profile_follow' profile.username %}" role="button">
+                                        Подписаться
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+
+
+
+
+                                </li>
                             </ul>
+
                     </div>
             </div>
+
 
             <div class="col-md-9">
 
@@ -59,5 +76,3 @@
 {% endblock %}
 
         </main>
-    </body>
-</html>

@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Post, Group, User, Comment
+from .models import Post, Group, User, Comment, Follow
 from .forms import PostForm, CommentForm
 
 
@@ -35,18 +35,29 @@ def new_post(request):
     return render(request, 'new.html', {'form': form})
 
 
+# @login_required
 def profile(request, username):
     # тут тело функции
+    follow_status = None
     author = User.objects.get(username=username)
     posts = Post.objects.filter(author=author).order_by("-pub_date")
     total_posts = posts.count()
+    followers = Follow.objects.filter(author=author.id).count()
+    following = Follow.objects.filter(user=author.id).count()
+    if request.user.username:
+        follow_status = Follow.objects.filter(author=author.id, user=request.user)
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    return render(request, "profile.html", {"posts": posts, "author": author,
+    return render(request, "profile.html", {"posts": posts,
+                                            'profile': author,
                                             'total_posts': total_posts,
+                                            'followers': followers,
+                                            'following': following,
                                             'page': page,
-                                            'paginator': paginator}
+                                            'paginator': paginator,
+                                            'follow_status': follow_status
+                                            }
                   )
 
 
@@ -71,7 +82,6 @@ def post_edit(request, username, post_id):
     # добавим в form свойство files
     form = PostForm(request.POST or None, files=request.FILES or None,
                     instance=post)
-
     if request.method == "POST":
         if form.is_valid():
             form.save()
@@ -94,3 +104,38 @@ def add_comment(request, username, post_id):
             new_comment.post = post
             new_comment.save()
     return redirect('post', username, post_id)
+
+
+@login_required
+def follow_index(request):
+    follow = Follow.objects.filter(user=request.user).values('author')
+    posts = Post.objects.select_related('author').filter(
+        author__in=follow).order_by("-pub_date")
+    posts_list = [post for post in posts]
+    paginator = Paginator(posts_list, 10)
+    page_number = request.GET.get('page')
+    page = paginator.get_page(page_number)
+    return render(request, "follow.html", {
+        'page': page,
+        'paginator': paginator,
+    })
+
+
+@login_required
+def profile_follow(request, username):
+    author = get_object_or_404(User, username=username)
+    already_followed = Follow.objects.filter(user=request.user.id,
+                                             author=author.id).exists()
+    if author.id != request.user.id and not already_followed:
+        Follow.objects.create(user=request.user, author=author)
+    return redirect('profile', username=username)
+
+
+@login_required
+def profile_unfollow(request, username):
+    author = get_object_or_404(User, username=username)
+    already_followed = Follow.objects.filter(user=request.user.id,
+                                             author=author.id).exists()
+    if already_followed:
+        Follow.objects.filter(user=request.user.id, author=author.id).delete()
+    return redirect('profile', username)
