@@ -35,7 +35,6 @@ def new_post(request):
     return render(request, 'new.html', {'form': form})
 
 
-# @login_required
 def profile(request, username):
     # тут тело функции
     follow_status = None
@@ -91,6 +90,15 @@ def post_edit(request, username, post_id):
     return render(
         request, "new.html", {"form": form, "post": post},
     )
+
+@login_required
+def post_delete(request, username, post_id):
+    profile = get_object_or_404(User, username=username)
+    if request.user != profile:
+        return redirect("post", username=request.user.username, post_id=post_id)
+    Post.objects.filter(id=post_id).delete()
+    return redirect("profile", username=request.user.username)
+
 
 
 @login_required
