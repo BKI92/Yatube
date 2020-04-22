@@ -44,7 +44,8 @@ def profile(request, username):
     followers = Follow.objects.filter(author=author.id).count()
     following = Follow.objects.filter(user=author.id).count()
     if request.user.username:
-        follow_status = Follow.objects.filter(author=author.id, user=request.user)
+        follow_status = Follow.objects.filter(author=author.id,
+                                              user=request.user)
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
@@ -91,14 +92,15 @@ def post_edit(request, username, post_id):
         request, "new.html", {"form": form, "post": post},
     )
 
+
 @login_required
 def post_delete(request, username, post_id):
     profile = get_object_or_404(User, username=username)
+    post = get_object_or_404(Post, pk=post_id)
     if request.user != profile:
-        return redirect("post", username=request.user.username, post_id=post_id)
+        return redirect("post", username=post.author, post_id=post_id)
     Post.objects.filter(id=post_id).delete()
-    return redirect("profile", username=request.user.username)
-
+    return redirect("profile", username=username)
 
 
 @login_required
