@@ -3,7 +3,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Post, Group, User, Comment, Follow
 from .forms import PostForm, CommentForm
-from dotenv import load_dotenv
+
 
 def index(request):
     post_list = Post.objects.order_by("-pub_date").all()
