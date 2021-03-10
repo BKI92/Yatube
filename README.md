@@ -8,6 +8,7 @@
 Для локального развертывания необходимо выполнить следующие шаги:
 - `python manage.py makemigrations`
 - `python manage.py migrate`
+
 Далее создаем администратора и запускаем локальный сервер
 - `python manage.py createsuperuser`
 - `python manage.py runserver`
