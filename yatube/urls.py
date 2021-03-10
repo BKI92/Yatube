@@ -33,8 +33,10 @@ urlpatterns = [
     # раздел администратора
     path("admin/", admin.site.urls),
 
-    path('about-author/', views.flatpage, {'url': '/about-author/'}, name='about-author'),
-    path('about-spec/', views.flatpage, {'url': '/about-spec/'}, name='about-spec'),
+    path('about-author/', views.flatpage, {'url': '/about-author/'},
+         name='about-author'),
+    path('about-spec/', views.flatpage, {'url': '/about-spec/'},
+         name='about-spec'),
 
     # обработчик для главной страницы ищем в urls.py приложения posts
     path("", include("posts.urls")),
@@ -49,6 +51,8 @@ urlpatterns += [
 
 if settings.DEBUG:
     import debug_toolbar
+
     urlpatterns += (path("__debug__/", include(debug_toolbar.urls)),)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.STATIC_URL,
+                          document_root=settings.STATIC_URL)
